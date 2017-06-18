@@ -126,6 +126,10 @@ class KNNBruteCL {
 
 		queue = clCreateCommandQueue(context, devices[0], 0, 0);
 		program = load_program("knn_kernels.cl", context, devices[0]);
+		if (queue == 0 || program == 0) {
+			cout << "Fail to init OpenCL" << endl;
+			return;
+		}
 
 		query_gpu = clCreateBuffer(context, 0, sizeof(cl_float) * dataDim, NULL, NULL);
 		all_data_gpu = clCreateBuffer(context, CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * dataDim*dataLength, data[0], NULL);

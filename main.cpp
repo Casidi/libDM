@@ -1,5 +1,6 @@
 #include "libDM.h"
 #include <fstream>
+#include <ctime>
 
 using namespace std;
 
@@ -92,6 +93,11 @@ void testNB(double** trainData, double* trainLabel, double** testData, double* t
 void testKNN(double** trainData, double* trainLabel, double** testData, double* testLabel) {
 	KNearestNeighbor knn;
 	knn.fit(trainData, trainLabel, 60000, 28 * 28);
+
+	clock_t begin = clock();
+	knn.predict_multiple(testData, 10000, 28 * 28, testLabel);
+	float elapsedTime = (float)(clock() - begin) / (float)CLOCKS_PER_SEC;
+	cout << "knn time = " << elapsedTime << endl;
 }
 
 void testSVM(double** trainData, double* trainLabel, double** testData, double* testLabel) {
@@ -106,8 +112,8 @@ int main() {
 	double* testLabel = loadTestLabel();
 	
 	//testNB(trainData, trainLabel, testData, testLabel);
-	//testKNN(trainData, trainLabel, testData, testLabel);
-	testSVM(trainData, trainLabel, testData, testLabel);
+	testKNN(trainData, trainLabel, testData, testLabel);
+	//testSVM(trainData, trainLabel, testData, testLabel);
 
 	freeDouble2D(trainData);
 	freeDouble2D(testData);

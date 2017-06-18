@@ -71,6 +71,8 @@ public:
 			for (int j = 0; j < dim; ++j)
 				trainData[i][j] = x[i][j];
 
+		trainLabel = y;
+
 		if (isValidCL) {
 			if (knnbcl) {
 				delete knnbcl;
@@ -93,6 +95,9 @@ public:
 		float* allDists = new float[k];
 		int* allIndexes = new int[k];
 
+		for (int i = 0; i < dim; ++i)
+			tempData[i] = x[i];
+
 		if (isValidCL) {
 			knnbcl->knn(tempData, allIndexes, allDists);
 		}
@@ -109,7 +114,7 @@ public:
 		}
 
 		double maxKey = freqCount.begin()->first;
-		int maxValue = freqCount.end()->second;
+		int maxValue = freqCount.begin()->second;
 		for (map<double, int>::iterator iter = freqCount.begin(); iter != freqCount.end(); ++iter) {
 			if (iter->second > maxValue) {
 				maxValue = iter->second;
@@ -125,8 +130,11 @@ public:
 	}
 
 	virtual void predict_multiple(double **x, int n, int dim, double *label) {
-		for (int i = 0; i < n; ++i)
+		for (int i = 0; i < n; ++i) {
+			if (i % 200 == 0)
+				cout << ".";
 			label[i] = predict(x[i], dim);
+		}
 	}
 };
 
