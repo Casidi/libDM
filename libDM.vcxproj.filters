@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="原始程式檔">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="標頭檔">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="資源檔">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="ann_src">
+      <UniqueIdentifier>{ce6c2c61-2499-4b88-b68b-03872aec509a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SVM">
+      <UniqueIdentifier>{2feea138-df87-47fb-baa9-a9f7676723f9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>原始程式檔</Filter>
+    </ClCompile>
+    <ClCompile Include="KNearestNeighbor\ann_src\brute.cpp">
+      <Filter>原始程式檔</Filter>
+    </ClCompile>
+    <ClCompile Include="KNearestNeighbor\ann_src\ANN.cpp">
+      <Filter>ann_src</Filter>
+    </ClCompile>
+    <ClCompile Include="KNearestNeighbor\ann_src\bd_fix_rad_search.cpp">
+      <Filter>ann_src</Filter>
+    </ClCompile>
+    <ClCompile Include="KNearestNeighbor\ann_src\bd_pr_search.cpp">
+      <Filter>ann_src</Filter>
+    </ClCompile>
+    <ClCompile Include="KNearestNeighbor\ann_src\bd_search.cpp">
+      <Filter>ann_src</Filter>
+    </ClCompile>
+    <ClCompile Include="KNearestNeighbor\ann_src\bd_tree.cpp">
+      <Filter>ann_src</Filter>
+    </ClCompile>
+    <ClCompile Include="KNearestNeighbor\ann_src\kd_dump.cpp">
+      <Filter>ann_src</Filter>
+    </ClCompile>
+    <ClCompile Include="KNearestNeighbor\ann_src\kd_fix_rad_search.cpp">
+      <Filter>ann_src</Filter>
+    </ClCompile>
+    <ClCompile Include="KNearestNeighbor\ann_src\kd_pr_search.cpp">
+      <Filter>ann_src</Filter>
+    </ClCompile>
+    <ClCompile Include="KNearestNeighbor\ann_src\kd_search.cpp">
+      <Filter>ann_src</Filter>
+    </ClCompile>
+    <ClCompile Include="KNearestNeighbor\ann_src\kd_split.cpp">
+      <Filter>ann_src</Filter>
+    </ClCompile>
+    <ClCompile Include="KNearestNeighbor\ann_src\kd_tree.cpp">
+      <Filter>ann_src</Filter>
+    </ClCompile>
+    <ClCompile Include="KNearestNeighbor\ann_src\kd_util.cpp">
+      <Filter>ann_src</Filter>
+    </ClCompile>
+    <ClCompile Include="KNearestNeighbor\ann_src\perf.cpp">
+      <Filter>ann_src</Filter>
+    </ClCompile>
+    <ClCompile Include="SVM\ocl.cpp">
+      <Filter>SVM</Filter>
+    </ClCompile>
+    <ClCompile Include="SVM\svm.cpp">
+      <Filter>SVM</Filter>
+    </ClCompile>
+    <ClCompile Include="SVM\svmlib.cpp">
+      <Filter>SVM</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Classify.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="libDM.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="KNearestNeighbor\brute_cl.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="KNearestNeighbor\ann_src\bd_tree.h">
+      <Filter>ann_src</Filter>
+    </ClInclude>
+    <ClInclude Include="KNearestNeighbor\ann_src\kd_fix_rad_search.h">
+      <Filter>ann_src</Filter>
+    </ClInclude>
+    <ClInclude Include="KNearestNeighbor\ann_src\kd_pr_search.h">
+      <Filter>ann_src</Filter>
+    </ClInclude>
+    <ClInclude Include="KNearestNeighbor\ann_src\kd_search.h">
+      <Filter>ann_src</Filter>
+    </ClInclude>
+    <ClInclude Include="KNearestNeighbor\ann_src\kd_split.h">
+      <Filter>ann_src</Filter>
+    </ClInclude>
+    <ClInclude Include="KNearestNeighbor\ann_src\kd_tree.h">
+      <Filter>ann_src</Filter>
+    </ClInclude>
+    <ClInclude Include="KNearestNeighbor\ann_src\kd_util.h">
+      <Filter>ann_src</Filter>
+    </ClInclude>
+    <ClInclude Include="KNearestNeighbor\ann_src\pr_queue.h">
+      <Filter>ann_src</Filter>
+    </ClInclude>
+    <ClInclude Include="KNearestNeighbor\ann_src\pr_queue_k.h">
+      <Filter>ann_src</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
