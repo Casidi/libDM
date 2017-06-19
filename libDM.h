@@ -4,6 +4,7 @@
 #include "KNearestNeighbor\brute_cl.h"
 #include "KMeans\kmeanslib.h"
 #include "SVM\svmlib.h"
+
 #include <vector>
 #include <map>
 #include <algorithm>

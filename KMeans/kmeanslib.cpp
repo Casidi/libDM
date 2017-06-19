@@ -23,9 +23,9 @@ KMeans::KMeans(int n_clusters = 8)
 void KMeans::fit(double ** x, int n, int dim)
 {
 	if (ocl)
-		ocl_kmeans(x, dim, n, n_clusters, (double)0.0001);
+		ocl_kmeans(x, dim, n, n_clusters, (double)0.001);
 	else
-		seq_kmeans(x, dim, n, n_clusters, (double)0.0001);
+		seq_kmeans(x, dim, n, n_clusters, (double)0.001);
 }
 
 double KMeans::predict(double * x, int dim)
@@ -69,7 +69,6 @@ cl_program KMeans::load_program(cl_context context, const char* filename, cl_dev
 		return 0;
 	}
 	int t = clBuildProgram(program, 0, 0, 0, 0, 0);
-	//printf("%d\n", t);
 	if (t != CL_SUCCESS) {
 		size_t log_size;
 		clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
@@ -88,7 +87,7 @@ void KMeans::ocl_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 	int     numCoords,    /* no. features */
 	int     numObjs,      /* no. objects */
 	int     numClusters,  /* no. clusters */
-	double   threshold)
+	double   threshold    /* % objects change membership */)
 {
 	membership = (int*)malloc(sizeof(int)*numObjs);
 	cl_int err;
@@ -100,7 +99,6 @@ void KMeans::ocl_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 	}
 	std::vector<cl_platform_id> platforms(num);
 	err = clGetPlatformIDs(num, &platforms[0], &num);
-	//printf("platform num %d\n", num);
 	if (err != CL_SUCCESS) {
 		std::cerr << "Unable to get platform ID\n";
 		exit(0);
@@ -108,14 +106,6 @@ void KMeans::ocl_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 
 	cl_context_properties prop[] = { CL_CONTEXT_PLATFORM, 
 		reinterpret_cast<cl_context_properties>(platforms[1]), 0 };
-
-	char *profile = NULL;
-	size_t size;
-	clGetPlatformInfo(platforms[0], CL_PLATFORM_NAME, NULL, profile, &size); // get size of profile char array
-	profile = (char*)malloc(size);
-	clGetPlatformInfo(platforms[0], CL_PLATFORM_NAME, size, profile, NULL); // get profile char array
-																			//std::cout << profile << std::endl;
-
 	cl_context context = clCreateContextFromType(prop, CL_DEVICE_TYPE_DEFAULT, NULL, NULL, NULL);
 	if (context == 0) {
 		std::cerr << "Can't create OpenCL context\n";
@@ -125,7 +115,6 @@ void KMeans::ocl_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 	size_t cb;
 	clGetContextInfo(context, CL_CONTEXT_DEVICES, 0, NULL, &cb);
 	std::vector<cl_device_id> devices(cb / sizeof(cl_device_id));
-	//printf("device num %d\n", devices.size());
 	clGetContextInfo(context, CL_CONTEXT_DEVICES, cb, &devices[0], 0);
 
 	clGetDeviceInfo(devices[0], CL_DEVICE_NAME, 0, NULL, &cb);
@@ -141,20 +130,21 @@ void KMeans::ocl_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 	//std::cout << "Device: " << devver.c_str() << "\n";
 
 	//int err;
-	//cl_queue_properties qprop[] = { CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0 };
+	//cl_command_queue queue = clCreateCommandQueueWithProperties(context, devices[0], 0, &err);
 	cl_command_queue queue = clCreateCommandQueue(context, devices[0], 0, &err);
-
 	if (queue == 0) {
 		std::cerr << "Can't create command queue\n";
 		clReleaseContext(context);
 		exit(0);
 	}
+
 	int      i, j, /*index,*/ loop = 0;
 	int     *newClusterSize; /* [numClusters]: no. objects assigned in each
 							 new cluster */
 	double    delta;          /* % of objects change their clusters */
-	//double  **clusters;       /* out: [numClusters][numCoords] */
+							  //double  **clusters;       /* out: [numClusters][numCoords] */
 	double  **newClusters;    /* [numClusters][numCoords] */
+
 	double  *dimObjects;
 	double  *dimClusters;
 	clusters = (double**)malloc(numClusters * sizeof(double*));
@@ -164,7 +154,6 @@ void KMeans::ocl_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 	for (i = 1; i < numClusters; i++)
 		clusters[i] = clusters[i - 1] + numCoords;
 
-
 	//malloc2D(dimObjects, numCoords, numObjs, double);
 	dimObjects = (double*)malloc(sizeof(double)*numObjs * numCoords);
 	for (i = 0; i < numObjs; i++) {
@@ -172,7 +161,6 @@ void KMeans::ocl_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 			dimObjects[i*numCoords + j] = objects[i][j];
 		}
 	}
-
 
 	/* pick first numClusters elements of objects[] as initial cluster centers*/
 	//malloc2D(dimClusters, numCoords, numClusters, double);
@@ -182,7 +170,6 @@ void KMeans::ocl_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 			dimClusters[i*numCoords + j] = dimObjects[i*numCoords + j];
 		}
 	}
-
 
 	/* initialize membership[] */
 	for (i = 0; i < numObjs; i++) membership[i] = -1;
@@ -199,18 +186,22 @@ void KMeans::ocl_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 	for (i = 1; i < numClusters; i++)
 		newClusters[i] = newClusters[i - 1] + numCoords;
 
-	cl_mem cl_Objects = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(cl_double) * numObjs * numCoords, NULL, NULL);
-	cl_mem cl_deviceClusters = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_double) * numClusters * numCoords, &dimClusters[0], NULL);
+	cl_mem cl_Objects = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_double) * numObjs * numCoords, &dimObjects[0], NULL);
+	cl_mem cl_deviceClusters = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(double) * numClusters * numCoords, NULL, NULL);
 	cl_mem cl_membership = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(cl_int) * numObjs, NULL, NULL);
+
 
 	if (cl_Objects == 0 || cl_deviceClusters == 0 || cl_membership == 0) {
 		std::cerr << "Can't create OpenCL buffer\n";
 	}
+
 	cl_program program = load_program(context, "kmeans_kernel.cl", devices[0]);
 
 	if (program == 0) {
 		std::cerr << "Can't load or build program\n";
+
 	}
+
 	cl_kernel kernel = clCreateKernel(program, "find_nearest_cluster", 0);
 	if (kernel == 0) {
 		std::cerr << "Can't load kernel\n";
@@ -221,29 +212,14 @@ void KMeans::ocl_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 	clSetKernelArg(kernel, 3, sizeof(cl_mem), &cl_Objects);
 	clSetKernelArg(kernel, 4, sizeof(cl_mem), &cl_deviceClusters);
 	clSetKernelArg(kernel, 5, sizeof(cl_mem), &cl_membership);
-	clSetKernelArg(kernel, 6, numClusters * numCoords * sizeof(cl_double), NULL);
 
 	size_t work_size = numObjs;
-
-	cl_ulong iotime = 0;
-	//cl_event event;
-
-	clEnqueueWriteBuffer(queue, cl_Objects, CL_TRUE, 0, sizeof(double)*numObjs*numCoords, dimObjects, 0, NULL, NULL);
-
-	size_t global = 0, local = 256;
-	while (global < work_size)
-		global += local;
-
 	do {
-
 		//cl_deviceClusters = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_double) * numClusters * numCoords, &dimClusters[0], NULL);
 		clEnqueueWriteBuffer(queue, cl_deviceClusters, CL_TRUE, 0, sizeof(double)*numClusters*numCoords, dimClusters, 0, NULL, NULL);
-		//size_t global = 131072, local = 512;
-		err = clEnqueueNDRangeKernel(queue, kernel, 1, 0, &global, &local, 0, 0, 0);
-		//err = clEnqueueNDRangeKernel(queue, kernel, 1, 0, &work_size, 0, 0, 0, 0);
+		err = clEnqueueNDRangeKernel(queue, kernel, 1, 0, &work_size, 0, 0, 0, 0);
 		if (err == CL_SUCCESS) {
-			//event.push_back(t);
-			err = clEnqueueReadBuffer(queue, cl_membership, CL_TRUE, 0, sizeof(cl_int) * numObjs, &newmembership[0], 0, 0, NULL);
+			err = clEnqueueReadBuffer(queue, cl_membership, CL_TRUE, 0, sizeof(cl_int) * numObjs, &newmembership[0], 0, 0, 0);
 		}
 
 		delta = 0;
@@ -269,11 +245,7 @@ void KMeans::ocl_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 
 		delta /= numObjs;
 
-
 	} while (delta > threshold && loop++ < 500);
-
-	//*loop_iterations = loop + 1;
-	std::cout << loop << std::endl;
 
 	free(newClusters[0]);
 	free(newClusters);
@@ -281,7 +253,6 @@ void KMeans::ocl_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 	for (i = 0; i < numClusters; i++)
 		for (int j = 0; j < numCoords; j++)
 			clusters[i][j] = dimClusters[i*numCoords + j];
-
 	int ret = clFlush(queue);
 	ret = clFinish(queue);
 	ret = clReleaseKernel(kernel);
@@ -292,7 +263,6 @@ void KMeans::ocl_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 	ret = clReleaseCommandQueue(queue);
 	ret = clReleaseContext(context);
 }
-
 
 double euclid_dist_2(int    numdims,  /* no. dimensions */
 	double *coord1,   /* [numdims] */
@@ -380,7 +350,7 @@ void KMeans::seq_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 	double   threshold    /* % objects change membership */
 /* out: [numObjs] */)
 {
-	membership = (int*)malloc(sizeof(int)*numCoords);
+	membership = (int*)malloc(sizeof(int)*numObjs);
 	int      i, j, index, loop = 0;
 	int     *newClusterSize; /* [numClusters]: no. objects assigned in each
 							 new cluster */
@@ -447,6 +417,7 @@ void KMeans::seq_kmeans(double **objects,      /* in: [numObjs][numCoords] */
 
 		delta /= numObjs;
 	} while (delta > threshold && loop++ < 500);
+
 	free(newClusters[0]);
 	free(newClusters);
 	free(newClusterSize);
