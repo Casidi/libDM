@@ -2,6 +2,7 @@
 #include "Classify.h"
 #include "NaiveBayes\NaiveBayesBase.h"
 #include "KNearestNeighbor\brute_cl.h"
+#include "KMeans\kmeanslib.h"
 #include "SVM\svmlib.h"
 #include <vector>
 #include <map>
@@ -40,6 +41,9 @@ public:
 			isValidCL = true;
 		else
 			isValidCL = false;
+
+		//for TEST!!!!!
+		//isValidCL = false;
 	}
 
 	~KNearestNeighbor() {
@@ -211,6 +215,9 @@ public:
 				tempData[i*dim + j] = x[i][j];
 
 		int *tempLabel = new int[n];
+
+		//for test!!!!
+		//nPlatforms = 0;
 
 		if (nPlatforms > 0) {
 			nbb->predictBatchCL(tempData, n, tempLabel);

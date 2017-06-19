@@ -81,6 +81,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -117,6 +118,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="KMeans\kmeanslib.cpp" />
     <ClCompile Include="KNearestNeighbor\ann_src\ANN.cpp" />
     <ClCompile Include="KNearestNeighbor\ann_src\bd_fix_rad_search.cpp" />
     <ClCompile Include="KNearestNeighbor\ann_src\bd_pr_search.cpp" />
@@ -138,6 +140,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Classify.h" />
+    <ClInclude Include="KMeans\kmeanslib.h" />
     <ClInclude Include="KNearestNeighbor\ann_src\bd_tree.h" />
     <ClInclude Include="KNearestNeighbor\ann_src\kd_fix_rad_search.h" />
     <ClInclude Include="KNearestNeighbor\ann_src\kd_pr_search.h" />

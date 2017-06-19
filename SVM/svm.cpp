@@ -12,8 +12,9 @@
 #include <assert.h>
 #include <time.h>
 #include <vector>
+
 using std::vector;
-bool debug = false;
+
 extern cl_context context;
 extern cl_program program;
 extern cl_kernel cl_kernel_rbf;
@@ -21,16 +22,12 @@ extern cl_kernel cl_kernel_predict;
 extern cl_command_queue queue;
 cl_mem cl_y;
 cl_mem cl_x_square;
-
 cl_mem cl_x_index;
 cl_mem cl_x_value;
-
 cl_mem cl_data;
 cl_mem cl_head_index;
-
 int *tmp_square;
 int *head_index;
-
 int *x_len;
 int global_l;
 bool is_swap = false;
@@ -242,13 +239,6 @@ public:
 		swap(x[i],x[j]);
 		if(x_square) swap(x_square[i], x_square[j]);
 		swap(x_len[i], x_len[j]);
-		/*clEnqueueWriteBuffer(queue, cl_head_index, CL_TRUE, sizeof(cl_int) * i, sizeof(cl_int), head_index + i, 0, NULL, NULL);
-		clEnqueueWriteBuffer(queue, cl_head_index, CL_TRUE, sizeof(cl_int) * j, sizeof(cl_int), head_index + j, 0, NULL, NULL);
-		if (x_square) {
-			clEnqueueWriteBuffer(queue, cl_x_square, CL_TRUE, sizeof(cl_double) * i, sizeof(cl_double), x_square + i, 0, NULL, NULL);
-			clEnqueueWriteBuffer(queue, cl_x_square, CL_TRUE, sizeof(cl_double) * j, sizeof(cl_double), x_square + j, 0, NULL, NULL);
-		}*/
-		
 	}
 protected:
 
@@ -330,7 +320,6 @@ Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
 	for (int i = 0; i < l; i++)
 	{
 		head_index[i] = x_size;
-		//printf("%d\n", head_index[i]);
 		const svm_node *cur = x[i];
 		while (cur->index != -1)
 		{
@@ -340,7 +329,6 @@ Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
 		}
 		x_size++;
 		x_len[i]++;
-		//x_len[i] = x_size;
 	}
 
 	int *x_index = Malloc(int, x_size);
@@ -360,8 +348,6 @@ Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
 		x_size++;
 	}
 	cl_int err;
-	//puts("xindex");
-	//printf("x size %d\n", x_size);
 	cl_x_index = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_int) * x_size, x_index, NULL);
 	cl_x_value = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_double) * x_size, x_value, NULL);
 
@@ -388,7 +374,6 @@ Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
 	}
 	free(x_index);
 	free(x_value);
-	//free(x_len);
 }
 
 Kernel::~Kernel()
@@ -404,8 +389,6 @@ double Kernel::dot(const svm_node *px, const svm_node *py)
 	{
 		if(px->index == py->index)
 		{
-			/*if(debug)
-				printf("px %f py %f\n", px->value, py->value);*/
 			sum += px->value * py->value;
 			++px;
 			++py;
@@ -565,9 +548,6 @@ void Solver::swap_index(int i, int j)
 	swap(p[i],p[j]);
 	swap(active_set[i],active_set[j]);
 	swap(G_bar[i],G_bar[j]);
-
-	//clEnqueueWriteBuffer(queue, cl_y, CL_TRUE, sizeof(cl_char) * i, sizeof(cl_char), y + i, 0, NULL, NULL);
-	//clEnqueueWriteBuffer(queue, cl_y, CL_TRUE, sizeof(cl_char) * j, sizeof(cl_char), y + j, 0, NULL, NULL);
 }
 
 void Solver::reconstruct_gradient()
@@ -1402,7 +1382,6 @@ public:
 				is_swap = false;
 			}
 			
-			//data2 = Malloc(Qfloat, len);
 			size_t work_size = len;
 			size_t global_size = len, local_size = 256;
 			size_t tmp = global_size % local_size;
@@ -1446,12 +1425,10 @@ public:
 			
 			if (err == CL_SUCCESS)
 			{
-				//clEnqueueReadBuffer(queue, cl_data, CL_TRUE, 0, sizeof(cl_float) * len, data2, 0, 0, NULL);
 				clEnqueueReadBuffer(queue, cl_data, CL_TRUE, sizeof(cl_float) * start, sizeof(cl_float) * (len - start), data + start, 0, 0, NULL);
 			}
 			else
 			{
-				//printf("# %d\n", CL_OUT_OF_RESOURCES);
 				printf("%d\n", err);
 				puts("enqueue kernel error");
 			}
@@ -2437,11 +2414,7 @@ svm_model *svm_train(const svm_problem *prob, const svm_parameter *param)
 				clReleaseMemObject(cl_x_value);
 				clReleaseMemObject(cl_head_index);
 				//clReleaseMemObject(cl_data);
-				/*clReleaseMemObject(cl_x_square);
-				clReleaseMemObject(cl_x_index);
-				clReleaseMemObject(cl_x_value);
-				clReleaseMemObject(cl_data);
-				clReleaseMemObject(cl_head_index);*/
+				//clReleaseMemObject(cl_x_square);
 			}
 
 		// build output
@@ -2743,58 +2716,6 @@ double svm_predict_values(const svm_model *model, const svm_node *x, double* dec
 		
 		double *kvalue = Malloc(double,l);
 
-		// TODO parallel predict
-		/*
-		cl_mem cl_index;
-		cl_mem cl_value;
-		int x_len = 1;
-		const svm_node *cur = x;
-		while (cur->index != -1) {
-			x_len++;
-			cur++;
-		}
-		int *tmp_index = Malloc(int, x_len);
-		double *tmp_value = Malloc(double, x_len);
-		cur = x;
-		x_len = 0;
-		while (cur->index != -1) {
-			tmp_index[x_len] = cur->index;
-			tmp_value[x_len] = cur->value;
-			x_len++;
-			cur++;
-		}
-		tmp_index[x_len] = -1;
-		x_len++;
-		cl_index = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_int) * x_len, tmp_index, NULL);
-		cl_value = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_double) * x_len, tmp_value, NULL);
-
-		free(tmp_index);
-		free(tmp_value);
-		cl_int err;
-		err = clSetKernelArg(cl_kernel_predict, 0, sizeof(cl_mem), &cl_index);
-		err |= clSetKernelArg(cl_kernel_predict, 1, sizeof(cl_mem), &cl_value);
-		
-		if (err != CL_SUCCESS) {
-			puts("set arg 0 1 error");
-		}
-
-		size_t global_size = l;
-		
-
-		err = clEnqueueNDRangeKernel(queue, cl_kernel_predict, 1, 0, &global_size, 0, 0, 0, 0);
-		if (err == CL_SUCCESS) {
-			clEnqueueReadBuffer(queue, cl_data, CL_TRUE, 0, sizeof(cl_double) * l, kvalue, 0, 0, 0);
-		}
-		else {
-			printf("%d\n", err);
-			puts("enqueue kernel error");
-			system("pause");
-		}
-
-		clReleaseMemObject(cl_index);
-		clReleaseMemObject(cl_index);
-		*/
-		//printf("%f\n", (double)kerneltime / CLOCKS_PER_SEC);
 		for(i=0;i<l;i++)
 			kvalue[i] = Kernel::k_function(x,model->SV[i],model->param);
 
@@ -3207,8 +3128,8 @@ void ocl_load_model(const svm_model *model)
 	cl_data = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(cl_double) * model->l, NULL, NULL);
 	if (!cl_x_index || !cl_x_value || !cl_head_index || !cl_data) {
 		puts("create buffer error");
+		exit(0);
 	}
-	
 	
 	err = clSetKernelArg(cl_kernel_predict, 2, sizeof(cl_mem), &cl_head_index);
 	err |= clSetKernelArg(cl_kernel_predict, 3, sizeof(cl_mem), &cl_x_index);
@@ -3230,7 +3151,6 @@ void ocl_load_model(const svm_model *model)
 
 void ocl_load_model2(const svm_model *model, bool init)
 {
-	clock_t start = clock();
 	if (init) {
 		ocl_init(200);
 	}
@@ -3243,7 +3163,6 @@ void ocl_load_model2(const svm_model *model, bool init)
 	for (int i = 0; i < model->l; i++)
 	{
 		head_index[i] = svx_size;
-		//printf("%d\n", head_index[i]);
 		const svm_node *cur = model->SV[i];
 		while (cur->index != -1)
 		{
@@ -3253,7 +3172,6 @@ void ocl_load_model2(const svm_model *model, bool init)
 		}
 		svx_size++;
 		svx_len[i]++;
-		//x_len[i] = x_size;
 	}
 	int *svx_index = Malloc(int, svx_size);
 	double *svx_value = Malloc(double, svx_size);
@@ -3317,7 +3235,6 @@ void ocl_load_model2(const svm_model *model, bool init)
 	err |= clSetKernelArg(cl_kernel_predict, 6, sizeof(cl_mem), &cl_x_value);
 	err |= clSetKernelArg(cl_kernel_predict, 7, sizeof(cl_mem), &cl_rho);
 	err |= clSetKernelArg(cl_kernel_predict, 8, sizeof(cl_mem), &cl_label);
-	//err |= clSetKernelArg(cl_kernel_predict, 5, sizeof(cl_mem), &cl_data);
 
 	if (err != CL_SUCCESS) {
 		puts("set kernel arg error");
@@ -3328,8 +3245,6 @@ void ocl_load_model2(const svm_model *model, bool init)
 	}
 	clFlush(queue);
 	clFinish(queue);
-	clock_t end = clock();
-	//printf("load moudle time %f\n", (double)(end - start) / CLOCKS_PER_SEC);
 }
 
 svm_model *svm_load_model(const char *model_file_name)

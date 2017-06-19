@@ -19,6 +19,9 @@
     <Filter Include="SVM">
       <UniqueIdentifier>{2feea138-df87-47fb-baa9-a9f7676723f9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="KMeans">
+      <UniqueIdentifier>{30f26cdb-a37e-4878-a49c-942bc763ae8e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -75,6 +78,9 @@
     <ClCompile Include="SVM\svmlib.cpp">
       <Filter>SVM</Filter>
     </ClCompile>
+    <ClCompile Include="KMeans\kmeanslib.cpp">
+      <Filter>KMeans</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Classify.h">
@@ -112,6 +118,9 @@
     </ClInclude>
     <ClInclude Include="KNearestNeighbor\ann_src\pr_queue_k.h">
       <Filter>ann_src</Filter>
+    </ClInclude>
+    <ClInclude Include="KMeans\kmeanslib.h">
+      <Filter>KMeans</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

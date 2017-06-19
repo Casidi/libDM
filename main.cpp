@@ -87,17 +87,42 @@ double* loadTestLabel() {
 
 void testNB(double** trainData, double* trainLabel, double** testData, double* testLabel) {
 	NaiveBayes nb;
+
 	nb.fit(trainData, trainLabel, 60000, 28 * 28);
+	cout << "nb fit done" << endl;
+
+	double* resultLabel = new double[10000];
+
+	clock_t begin = clock();
+	nb.predict_multiple(testData, 10000, 28 * 28, resultLabel);
+	float elapsedTime = (float)(clock() - begin) / (float)CLOCKS_PER_SEC;
+	cout << endl << "NB time = " << elapsedTime << endl;
+
+	int accCount = 0;
+	for (int i = 0; i < 10000; ++i)
+		if (resultLabel[i] == testLabel[i])
+			++accCount;
+	cout << "acc = " << (float)accCount / 10000.0 << endl;
+	delete[] resultLabel;
 }
 
 void testKNN(double** trainData, double* trainLabel, double** testData, double* testLabel) {
 	KNearestNeighbor knn;
 	knn.fit(trainData, trainLabel, 60000, 28 * 28);
 
+	double* resultLabel = new double[10000];
+
 	clock_t begin = clock();
-	knn.predict_multiple(testData, 10000, 28 * 28, testLabel);
+	knn.predict_multiple(testData, 10000, 28 * 28, resultLabel);
 	float elapsedTime = (float)(clock() - begin) / (float)CLOCKS_PER_SEC;
-	cout << "knn time = " << elapsedTime << endl;
+	cout << endl << "knn time = " << elapsedTime << endl;
+
+	int accCount = 0;
+	for (int i = 0; i < 10000; ++i)
+		if (resultLabel[i] == testLabel[i])
+			++accCount;
+	cout << "acc = " << (float)accCount / 10000.0 << endl;
+	delete[] resultLabel;
 }
 
 void testSVM(double** trainData, double* trainLabel, double** testData, double* testLabel) {
@@ -105,20 +130,43 @@ void testSVM(double** trainData, double* trainLabel, double** testData, double* 
 	svm.fit(trainData, trainLabel, 60000, 28 * 28);
 }
 
+void testKMeans(double** trainData, double* trainLabel, double** testData, double* testLabel) {
+	KMeans kmeans(10);
+	kmeans.fit(trainData, 60000, 28 * 28);
+
+	double* resultLabel = new double[10000];
+
+	clock_t begin = clock();
+	kmeans.predict_multiple(testData, 10000, 28 * 28, resultLabel);
+	float elapsedTime = (float)(clock() - begin) / (float)CLOCKS_PER_SEC;
+	cout << endl << "kmeans time = " << elapsedTime << endl;
+
+	int accCount = 0;
+	for (int i = 0; i < 10000; ++i)
+		if (resultLabel[i] == testLabel[i])
+			++accCount;
+	cout << "acc = " << (float)accCount / 10000.0 << endl;
+	delete[] resultLabel;
+}
+
 int main() {
 	double** trainData = loadTrainData();
 	double* trainLabel = loadTrainLabel();
 	double** testData = loadTestData();
 	double* testLabel = loadTestLabel();
+	cout << "load data done" << endl;
 	
 	//testNB(trainData, trainLabel, testData, testLabel);
-	testKNN(trainData, trainLabel, testData, testLabel);
+	//testKNN(trainData, trainLabel, testData, testLabel);
 	//testSVM(trainData, trainLabel, testData, testLabel);
+	testKMeans(trainData, trainLabel, testData, testLabel);
 
 	freeDouble2D(trainData);
 	freeDouble2D(testData);
 	delete[] trainLabel;
 	delete[] testLabel;
 
+	cout << "Done!" << endl;
+	cin.get();
 	return 0;
 }

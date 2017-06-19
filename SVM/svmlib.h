@@ -1,7 +1,7 @@
 #ifndef SVMLIB
 #define SVMLIB
 #include "svm.h"
-#include "..\Classify.h"
+#include "Classify.h"
 class SVM: public Classify
 {
 public:

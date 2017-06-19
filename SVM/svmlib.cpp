@@ -14,6 +14,8 @@ extern cl_program program;
 extern cl_kernel cl_kernel_predict;
 extern cl_command_queue queue;
 
+void print_null(const char *s) {}
+
 SVM::SVM()
 {
 	// default values
@@ -32,7 +34,7 @@ SVM::SVM()
 	param.nr_weight = 0;
 	param.weight_label = NULL;
 	param.weight = NULL;
-//	cross_validation = 0;
+	svm_set_print_string_function(&print_null);
 }
 
 void SVM::fit(double **x, double *y, int n, int dim)
@@ -41,14 +43,11 @@ void SVM::fit(double **x, double *y, int n, int dim)
 		param.gamma = 1.0 / dim;
 	prob.l = n;
 	prob.y = (double*)malloc(sizeof(double)*n);
-	//printf("%d %d\n", n, dim);
 	for (int i = 0; i < n; i++) {
 		prob.y[i] = y[i];
 	}
-	//memcpy(prob.y, y, sizeof(double) * n);
-	
 	prob.x = (struct svm_node**) malloc(sizeof(svm_node*) * n);
-	
+
 	for (int i = 0; i < n; i++) {
 		int cnt = 0;
 		for (int j = 0; j < dim; j++) {
@@ -56,12 +55,11 @@ void SVM::fit(double **x, double *y, int n, int dim)
 				cnt++;
 			}
 		}
-		//cnt = 2;
-		prob.x[i] = (struct svm_node*) malloc(sizeof(svm_node) * (cnt+1));
+		prob.x[i] = (struct svm_node*) malloc(sizeof(svm_node) * (cnt + 1));
 		int k = 0;
 		for (int j = 0; j < dim; j++) {
 			if (x[i][j] != 0) {
-				prob.x[i][k].index = j+1;
+				prob.x[i][k].index = j + 1;
 				prob.x[i][k].value = x[i][j];
 				k++;
 			}
@@ -78,15 +76,11 @@ void SVM::fit(double **x, double *y, int n, int dim)
 		fprintf(stderr, "ERROR: %s\n", error_msg);
 		exit(1);
 	}
-	else {
-		//puts("noerror");
-	}
-	
-	//prob.print();
-	
 	model = svm_train(&prob, &param);
-
-	// TODO free
+	for (int i = 0; i < n; i++) {
+		free(prob.x[i]);
+	}
+	free(prob.x);
 }
 
 double SVM::predict(double *x, int n)
@@ -97,20 +91,15 @@ double SVM::predict(double *x, int n)
 			cnt++;
 		}
 	}
-	//cnt = n;
-	//ocl_init(200);
 	struct svm_node *node = (struct svm_node*) malloc(sizeof(struct svm_node) * (cnt + 1));
 	int k = 0;
 	for (int i = 0; i < n; i++) {
-		//node[i].index = i;
-		//node[i].value = x[i];
 		if (x[i] != 0) {
 			node[k].index = i;
 			node[k].value = x[i];
 			k++;
 		}
 	}
-	//node[n].index = -1;
 	node[k].index = -1;
 	free(node);
 	return svm_predict(model, node);
@@ -118,8 +107,7 @@ double SVM::predict(double *x, int n)
 
 void SVM::predict_multiple(double ** x, int n, int dim, double * label)
 {
-	ocl_load_model2(model,false);
-	//ocl_init(200);
+	ocl_load_model2(model, false);
 	size_t num_predict = n;
 	vector<int> x_index;
 	vector<double> x_value;
@@ -157,11 +145,10 @@ void SVM::predict_multiple(double ** x, int n, int dim, double * label)
 	err |= clSetKernelArg(cl_kernel_predict, 16, sizeof(cl_mem), &cl_vote);
 	err |= clSetKernelArg(cl_kernel_predict, 17, sizeof(cl_mem), &cl_dec_values);
 	if (err != CL_SUCCESS) {
-		puts("set kernel arg error");
+		puts("kernel argument error");
 		exit(0);
 	}
 	err = clEnqueueNDRangeKernel(queue, cl_kernel_predict, 1, 0, &num_predict, 0, 0, 0, 0);
-	//label = (double*)malloc(sizeof(double) * num_predict);
 	if (err == CL_SUCCESS) {
 		err = clEnqueueReadBuffer(queue, cl_predict_label, CL_TRUE, 0, sizeof(cl_double) * num_predict, label, 0, 0, NULL);
 	}
@@ -169,6 +156,14 @@ void SVM::predict_multiple(double ** x, int n, int dim, double * label)
 		printf("%d\n", err);
 		exit(0);
 	}
+	clReleaseMemObject(cl_x_index);
+	clReleaseMemObject(cl_x_value);
+	clReleaseMemObject(cl_head_index);
+	clReleaseMemObject(cl_predict_label);
+	clReleaseMemObject(cl_kvalue);
+	clReleaseMemObject(cl_start);
+	clReleaseMemObject(cl_vote);
+	clReleaseMemObject(cl_dec_values);
 }
 
 void SVM::set_rbf(double gamma)
